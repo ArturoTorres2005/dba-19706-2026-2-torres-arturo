@@ -1,68 +1,76 @@
-# LAB-01 — Protección y Privacidad de Datos
+# LAB-01 — Bitácoras y Auditoría del Dato en PostgreSQL
 
 - **Alumno:** Arturo Torres Urias
 - **Grupo:** 4-3
+- **Correo institucional:** a.torres23@info.uas.edu.mx
+- **Usuario GitHub:** ArturoTorres2005
 - **Materia:** Gestión de Seguridad y Desempeño de Bases de Datos
-- **Unidad:** II — Seguridad, privacidad y control de acceso
-- **Tema:** 2.3 — Datos sensibles, privacidad y protección de la información
-- **Motor:** PostgreSQL 16
-- **Modalidad:** Práctica individual
+- **Unidad:** III — Auditoría, trazabilidad y gobierno práctico de datos
+- **Temas:** 3.1 Auditoría de bases de datos · 3.2 Bitácoras y trazabilidad
+- **Motor:** PostgreSQL 16.15 (`Ubuntu 16.15-0ubuntu0.24.04.1 on x86_64-pc-linux-gnu`) + espejo local en PostgreSQL 18.6 (`x86_64-windows`)
+- **Modalidad:** Práctica individual (Partes A, B y Parte C opcional con `pgaudit`)
 
 ---
 
-## Objetivo
+## 1. Despliegue del Servidor y Versión (Anexo A)
 
-Aplicar mecanismos de protección de datos en PostgreSQL 16 de acuerdo con el propósito y nivel de acceso requerido por diferentes usuarios de una organización ficticia (**Comercializadora Norte S.A. de C.V.**), implementando:
+De acuerdo con el **Anexo A (Tabla A.1 — Linux con paquetes de la distribución / PGDG)**, el laboratorio se desplegó sobre una instancia de **PostgreSQL 16.15** en **Ubuntu 24.04 LTS (WSL2)**, complementada con el paquete oficial `postgresql-16-pgaudit` (`16.0`) para la ejecución completa de la **Parte C**, además de mantener replicada la base de datos `comercial` en el servicio nativo de Windows.
 
-1. **Clasificación de datos** (identificadores directos, cuasi-identificadores y atributos operativos).
-2. **Enmascaramiento dinámico (*masking*)** mediante vistas restringidas para el área de **Soporte**.
-3. **Seudonimización (*pseudonymization*)** y **separación de funciones** mediante tokens UUID (`pgcrypto`) y esquemas aislados (`pii` y `analitica`) para el área de **Analítica**.
-4. **Anonimización (*anonymization*)** mediante generalización, agregación y supresión de grupos pequeños ($k$-anonimato con `HAVING COUNT(*) >= 5`) para **Dirección**, incluyendo el análisis del riesgo de reidentificación.
-5. **Retención de datos** mediante consultas de identificación de registros que superan el periodo de conservación establecido (5 años) y diseño del procedimiento seguro de depuración.
+- **Versión exacta (`SELECT version();`):**
+  `PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit`
+- **Base de datos de trabajo:** `comercial`
+- **Directorio de datos (`SHOW data_directory;`):** `/var/lib/postgresql/16/main`
+- **Archivo principal de configuración (`SHOW config_file;`):** `/etc/postgresql/16/main/postgresql.conf`
+- **Archivo de reglas de autenticación (`SHOW hba_file;`):** `/etc/postgresql/16/main/pg_hba.conf`
+- **Apertura de sesión de administrador:** `sudo -u postgres psql -d comercial`
+- **Sesión por red (aplicación y usuarios):** `psql "postgresql://<usuario>:<REDACTED>@127.0.0.1/comercial?application_name=<aplicacion>"`
+- **Reinicio del servicio:** `sudo systemctl restart postgresql`
 
 ---
 
-## Estructura del Repositorio
+## 2. Estructura del Directorio `LAB-01/`
 
 ```text
 LAB-01/
 ├── README.md
 ├── sql/
-│   ├── 01-clasificacion.sql      # Preparación de tabla clientes, inserción de datos y clasificación
-│   ├── 02-enmascaramiento.sql    # Rol soporte, vista v_clientes_soporte y control de acceso
-│   ├── 03-seudonimizacion.sql    # Esquemas pii/analitica, mapa de tokens UUID y rol analista
-│   ├── 04-anonimizacion.sql      # Consultas de generalización, agregación, umbral k>=5 y reto
-│   └── 05-retencion.sql          # Identificación de registros sujetos a retención (> 5 años)
+│   ├── 01-colector-y-vista.sql
+│   ├── 02-configuracion-bitacora.sql
+│   ├── 03-privilegios-estructura.sql
+│   ├── 04-esquema-auditoria.sql
+│   ├── 05-funcion-disparador.sql
+│   └── 06-campos-modificados.sql
 ├── evidencias/
-│   ├── 01-clasificacion.pdf      # Evidencia de Actividad 1 y preparación de la base de datos
-│   ├── 02-enmascaramiento.pdf    # Evidencia de Actividad 2 (vista enmascarada y acceso denegado)
-│   ├── 03-seudonimizacion.pdf    # Evidencia de Actividades 3 y 4 (tokens y separación de funciones)
-│   ├── 04-anonimizacion.pdf      # Evidencia de Actividades 5 y 6 (agregación, k-anonimato y reto)
-│   └── 05-retencion.pdf          # Evidencia de Actividad 7 (consulta y política de retención)
-└── informe.md                    # Informe técnico completo, matriz, actividades y reflexión
+│   ├── 01-configuracion-inicial.md
+│   ├── 02-colector.md
+│   ├── 03-incidente-sin-bitacora.md
+│   ├── 04-configuracion-bitacora.md
+│   ├── 05-accesos.md
+│   ├── 06-privilegios-estructura.md
+│   ├── 07-modificaciones.md
+│   ├── 08-errores.md
+│   ├── 09-pg-stat-activity.md
+│   ├── 10-diseno-auditoria.md
+│   ├── 11-incidente-auditado.md
+│   ├── 12-altas-bajas.md
+│   ├── 13-manipulacion.md
+│   ├── 14-limites.md
+│   ├── 15-cronologia.md
+│   ├── 16-pgaudit.md
+│   ├── bitacora-lab01.log
+│   ├── bitacora-lab01.sha256
+│   └── capturas/
+│       └── 01-configuracion-inicial.png ... 16-pgaudit.png
+└── informe.md
 ```
 
 ---
 
-## Orden de Ejecución de los Scripts SQL
+## 3. Resumen de Ejecución y Verificación Final (Sección 26)
 
-Para reproducir el laboratorio completo en una instancia de **PostgreSQL 16**:
-
-```bash
-psql -U postgres -d comercializadora_norte -f sql/01-clasificacion.sql
-psql -U postgres -d comercializadora_norte -f sql/02-enmascaramiento.sql
-psql -U postgres -d comercializadora_norte -f sql/03-seudonimizacion.sql
-psql -U postgres -d comercializadora_norte -f sql/04-anonimizacion.sql
-psql -U postgres -d comercializadora_norte -f sql/05-retencion.sql
-```
-
----
-
-## Resumen de Controles Implementados por Área
-
-| Área / Rol | Nivel de acceso requerido | Mecanismo implementado | Objetos permitidos | Objetos restringidos |
-| :--- | :--- | :--- | :--- | :--- |
-| **Soporte** (`soporte`) | Identificar al cliente para atender solicitudes sin ver datos sensibles completos | Enmascaramiento mediante vista (`VIEW`) + `GRANT`/`REVOKE` | `public.v_clientes_soporte` | `public.clientes`, `pii.mapa_cliente`, `analitica.clientes` |
-| **Analítica** (`analista`) | Analizar tendencias y patrones sin conocer la identidad directa del cliente | Seudonimización con tokens UUID (`pgcrypto`) + Separación de funciones | `analitica.clientes` | `pii.mapa_cliente`, `public.clientes`, `public.v_clientes_soporte` |
-| **Dirección** | Información estadística y agregada para toma de decisiones | Generalización (rangos de edad y región postal), agregación (`COUNT`) y supresión (`HAVING COUNT(*) >= 5`) | Consultas agregadas / vistas estadísticas | Datos individuales identificables |
-| **DBA** (`postgres`) | Administrar estructuras, esquemas, políticas de retención y control de accesos | Control de acceso total y custodia del esquema `pii` | Todos los esquemas (`public`, `pii`, `analitica`) | Sujeto a auditoría y procedimientos de aprobación |
+| Parte | Componente | Estado Verificado | Evidencia Principal |
+| :---: | :--- | :---: | :--- |
+| **Parte A** | `logging_collector = on`, `log_connections = on`, `log_disconnections = on`, `log_statement = 'mod'`, `log_line_prefix = '%m [%p] user=%u db=%d app=%a client=%h '` (`source = configuration file`) | **Cumplido** | [01-configuracion-inicial.md](./evidencias/01-configuracion-inicial.md) a [09-pg-stat-activity.md](./evidencias/09-pg-stat-activity.md) |
+| **Parte B** | Esquema `auditoria` sin acceso para `PUBLIC`, tabla `auditoria.cambios_clientes`, función `SECURITY DEFINER` con `search_path` fijo y disparador `trg_auditoria_clientes` (`tgenabled = O`) | **Cumplido** | [10-diseno-auditoria.md](./evidencias/10-diseno-auditoria.md) a [14-limites.md](./evidencias/14-limites.md) |
+| **Cierre A y B** | Exportación de `bitacora-lab01.log` con retiro de secretos (`<REDACTED>`), hash SHA-256 (`cac28a45a80ed5ab20e52e9d75fafd7d70bdd22cce14bc1a1b75e700b1f68008`) y reconstrucción cronológica | **Cumplido** | [15-cronologia.md](./evidencias/15-cronologia.md), [bitacora-lab01.log](./evidencias/bitacora-lab01.log), [bitacora-lab01.sha256](./evidencias/bitacora-lab01.sha256) |
+| **Parte C (Opcional)** | Extensión `pgaudit 16.0` cargada vía `shared_preload_libraries`, rol `auditor_datos` y auditoría de lectura/escritura sobre columnas sensibles (`rfc`, `telefono`) | **Cumplido** | [16-pgaudit.md](./evidencias/16-pgaudit.md) |
