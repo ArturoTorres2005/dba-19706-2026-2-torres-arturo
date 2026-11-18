@@ -1,0 +1,119 @@
+[
+  {
+    "op": "update",
+    "ns": "comercial.clientes",
+    "command": {
+      "q": {
+        "_id": 1
+      },
+      "u": {
+        "$set": {
+          "telefono": "6670000000"
+        }
+      }
+    },
+    "docsExamined": 1,
+    "nModified": 1,
+    "millis": 0,
+    "ts": {
+      "$date": "2026-11-18T06:34:38.682Z"
+    },
+    "client": "127.0.0.1",
+    "appName": "app-ventas-web",
+    "user": "app_ventas@comercial"
+  },
+  {
+    "op": "update",
+    "ns": "comercial.clientes",
+    "command": {
+      "q": {
+        "_id": 2
+      },
+      "u": {
+        "$set": {
+          "nombre": "Carlos Pérez",
+          "correo": "carlos.perez@example.test",
+          "telefono": "6672345678",
+          "rfc": "PECA900720DEF",
+          "edad": 35,
+          "ciudad": "Culiacán",
+          "codigo_postal": "80100"
+        }
+      }
+    },
+    "docsExamined": 0,
+    "nModified": 0,
+    "millis": 0,
+    "ts": {
+      "$date": "2026-11-18T06:34:43.930Z"
+    },
+    "client": "127.0.0.1",
+    "appName": "mongosh 2.14.2",
+    "user": "admin@admin"
+  },
+  {
+    "op": "query",
+    "ns": "comercial.clientes",
+    "command": {
+      "find": "clientes",
+      "filter": {
+        "ciudad": "Culiacán"
+      },
+      "projection": {
+        "nombre": 1,
+        "ciudad": 1
+      }
+    },
+    "docsExamined": 5,
+    "nreturned": 3,
+    "millis": 0,
+    "ts": {
+      "$date": "2026-11-18T06:34:44.458Z"
+    },
+    "client": "127.0.0.1",
+    "appName": "app-ventas-web",
+    "user": "app_ventas@comercial"
+  },
+  {
+    "op": "update",
+    "ns": "comercial.clientes",
+    "command": {
+      "q": {
+        "_id": 3
+      },
+      "u": {
+        "$set": {
+          "rfc": "GAMA780912XYZ"
+        }
+      }
+    },
+    "docsExamined": 1,
+    "nModified": 0,
+    "millis": 0,
+    "ts": {
+      "$date": "2026-11-18T06:34:44.462Z"
+    },
+    "client": "127.0.0.1",
+    "appName": "app-ventas-web",
+    "user": "app_ventas@comercial"
+  },
+  {
+    "op": "remove",
+    "ns": "comercial.clientes",
+    "command": {
+      "q": {
+        "_id": 2
+      },
+      "limit": 1
+    },
+    "docsExamined": 1,
+    "ndeleted": 1,
+    "millis": 0,
+    "ts": {
+      "$date": "2026-11-18T06:34:44.469Z"
+    },
+    "client": "127.0.0.1",
+    "appName": "app-ventas-web",
+    "user": "app_ventas@comercial"
+  }
+]
